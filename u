@@ -1,0 +1,5 @@
+#!/bin/bash
+# depends reflector paru
+# simple arch linux update one liner
+sudo printf "" && printf "\e[1;34m%-6s\e[m\n" "Running Reflector ..." ; sudo reflector --verbose --latest 5 --sort rate --save /etc/pacman.d/mirrorlist && printf "\e[1;34m%-6s\e[m\n" "Running Update ..." ; sudo pacman -Syu && paru -Syu && sudo updatedb && printf "\e[1;32m%-6s\e[m\n" " Update Completed !" || printf "\e[1;31m%-6s\e[m\n" " !!! UPDATE FAILED !!! "
+
