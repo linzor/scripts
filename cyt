@@ -1,0 +1,37 @@
+#!/bin/bash
+# depends ffmpeg, alacritty, s9, youtube-dl, mpv, pulseaudio-dlna (optional), pulseaudio
+# cli youtube music player with option to stream via chromecast/dlna
+function ctrl_c(){
+pulseaudio --kill > /dev/null
+s9 dlna > /dev/null
+s9 cyt > /dev/null
+}
+trap ctrl_c SIGINT
+function server(){
+alacritty -t "dlna-chromecast-server" -e sh -c "pulseaudio-dlna --auto-reconnect --fake-http-content-length --codec wav --encoder-backend=ffmpeg --chunk-size=64 --cover-mode=disabled --disable-device-stop --ssdp-ttl=5 " & disown
+}
+function menu(){
+echo '(1) search yt (local)'
+echo '(2) search yt (server)'
+echo '(3) server only'
+echo '(4) kill server'
+read -p " : " copt
+[[ $copt = "1" ]] && SON=0 && searchyt
+[[ $copt = "2" ]] && SON=1 && searchyt
+[[ $copt = "3" ]] && server
+[[ $copt = "4" ]] && ctrl_c
+}
+function searchyt(){
+[[ $SON = "1" ]] && server
+read -p "Search: " searchfor1
+searchfor2=$(echo "$searchfor1" | tr " " +)
+cursearch=$(curl https://www.youtube.com/results?search_query=$searchfor2 2>/dev/null)
+titles=$(echo "$cursearch" | sed 's/"title":{"runs":/\n/g' | grep -F '[{"text":"' | cut -f2,18 -d '{' | grep "watch?v=" | sed 's/"text":"//g' | cut -f1 -d '}' | sed 's/"//g' | cut -f 1,2,3,4,5,6,7,8,9,10 -d ' ' | grep " " -n)
+links=$(echo "$cursearch" | sed 's/"title":{"runs":/\n/g' | grep -F '[{"text":"' | cut -f2,18 -d '{' | grep "watch?v=" | sed 's/"text":"//g' | cut -f2 -d '{' | cut -f4 -d '"')
+echo "$titles"
+read -p "track:  " trackchoice
+mpv --no-video https://youtube.com$(echo "$links" | cut -f$trackchoice -d'
+')
+menu
+}
+menu
