@@ -1,0 +1,56 @@
+#!/bin/bash
+# RANDOM WALLHAVEN WALLPAPER
+#depends: shuf ; tidy ; feh
+lock=0 ; A1=$1
+if [[ $A1 = "--random" ]];then
+R1=$(( $RANDOM % 3 + 1 ))
+if [[ $R1 = "1" ]];then A1='--anime' ;fi
+if [[ $R1 = "2" ]];then A1=" " ;fi
+if [[ $R1 = "3" ]];then A1="--porn" ;fi
+fi
+if [[ $A1 = "--anime" ]];then 
+base="https://wallhaven.cc/search?categories=010&purity=010&atleast=1920x1080&ratios=16x9%2C16x10&sorting=random&order=desc" #NSFW 16x9, 16x10
+else
+base="https://wallhaven.cc/search?categories=110&purity=110&atleast=1920x1080&ratios=16x9&sorting=random&order=desc" #SFW 16x9
+fi
+if [[ $A1 = "--save" ]];then
+save=1
+else
+save=0
+fi
+if [[ $A1 = "--porn" ]];then
+#override for just shitty porn
+base="https://wallhaven.cc/search?categories=001&purity=010&atleast=1920x1080&ratios=16x9%2C16x10&sorting=random&order=desc&seed=w2nLrD&page=2"
+fi
+if [[ $A1 = "--help" ]];then
+echo "--anime		anime only filter"
+echo '--porn		"porn" only filter'
+echo '--random        random filter (normal/anime/porn)'
+echo "--save		save current wallpaper"
+echo "--help		this message"
+lock=1
+fi
+function setwall(){
+gnome=$(ps -ax | grep /usr/bin/gnome-shell | grep -v grep | wc -l)
+if [[ $gnome = 1 ]];then gsettings set org.gnome.desktop.background picture-uri file:///tmp/RW
+else
+feh --bg-scale /tmp/RW ;fi
+}
+function main(){
+check
+if [[ $save != 1 ]];then
+r1url=$(curl "$base" | tidy 2>/dev/null | grep "https://wallhaven.cc/w/" | cut -f2 -d' ' | cut -f2 -d'"' | shuf -n 1) 
+r2url=$(curl $r1url | tidy 2>/dev/null | grep "https://w.wallhaven.cc/full" | cut -f2 -d'"') 
+wget $r2url -O /tmp/RW ; setwall && echo "$r2url" > /tmp/r2url.dat
+else
+wget $(cat /tmp/r2url.dat) -O /opt/wallpapers/RWHW/$(ls /opt/wallpapers/RWHW/ -l | wc -l)
+fi
+}
+function check(){
+ipc0=$(ping -c 4 9.9.9.9 | grep "0% packet loss" | cut -f3 -d',') 
+while [[ $ipc0 != " 0% packet loss" ]] ;do 
+sleep 1
+ipc0=$(ping -c 4 9.9.9.9 | grep "0% packet loss" | cut -f3 -d',')
+done
+}
+if [[ $lock != "1" ]];then main ;fi

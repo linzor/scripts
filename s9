@@ -1,0 +1,28 @@
+#!/bin/bash
+if [[ $1 = "--help" ]];then
+run=0
+echo 's9: auto send sigkill to all processes matching the pattern'
+echo 'usage: s9 {process pattern}'
+fi
+if [[ $run != "0" ]];then
+C2kill=0
+SQ="$*"
+ids=$(ps -A | grep $SQ | grep -v "ps -A" | grep -v "grep $SQ" | cut -c'1,2,3,4,5,6,7' | tr -d ' ')
+Nfound=$(printf "$ids" | wc -w)
+if [[ $Nfound != "0" ]];then
+while [[ $Nfound != $C2kill ]];do
+kill -9 $(printf "$ids" | sed -n $(expr $C2kill + 1)p)
+C2kill=$(expr $C2kill + 1)
+done
+sleep 1.5
+Cids=$(ps -A | grep $SQ | grep -v "ps -A" | grep -v "grep $SQ" | cut -c'1,2,3,4,5,6,7' | tr -d ' ')
+CNfound=$(printf "$Cids" | wc -w)
+if [[ $CNfound = 0 ]];then
+echo "All procs killed (alive $CNfound)"
+else
+echo "Kill unsuccesful (alive $CNfound out of $Nfound)"
+fi
+else
+echo "no procs with pattern $SQ found"
+fi
+fi
