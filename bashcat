@@ -1,0 +1,66 @@
+#!/bin/bash
+#depends figlet (optional)
+FPS=240 # target fps
+SFPS=$(awk "BEGIN {print(1 / $FPS)}")
+red=255
+green=0
+blue=0
+FUNC="Finput"
+function STOP(){
+printf "$content"
+echo "Error [{$ER}]"
+SFPS="1000000" && sleep 0.25 && FUNC=0 && content=""
+Ftrap
+}
+function Finput(){
+printf "\x1b[38;2;${red};${green};${blue}m${content}\x1b[0m\r"
+}
+function PREP(){
+clear
+tput civis
+LINEMAX=$(printf "$content" | wc -l) 
+[[ $LINEMAX = 0 ]] && ER="3 File is empty." && STOP || CLINE="1" && SEQ
+}
+function Ftext(){
+FSED=$(printf "${content}\r" | sed -n ${CLINE}p)
+tput cup $CLINE
+printf "\x1b[38;2;${red};${green};${blue}m$FSED\x1b[0m\r"
+if [[ $CLINE -gt $LINEMAX ]];then CLINE=1 ;else
+CLINE=$(expr $CLINE + 1) ;fi
+}
+function SEQ(){
+while [[ $blue != 255 ]];do
+sleep $SFPS && $FUNC && blue=$(expr $blue + 1) ;done #blue up
+while [[ $red != 0 ]];do
+sleep $SFPS && $FUNC && red=$(expr $red - 1) ;done #red down
+while [[ $green != 255 ]];do
+sleep $SFPS && $FUNC && green=$(expr $green + 1) ;done #green up
+while [[ $blue != 0 ]];do
+sleep $SFPS && $FUNC && blue=$(expr $blue - 1) ;done #blue down
+while [[ $red != 255 ]];do
+sleep $SFPS && $FUNC && red=$(expr $red + 1) ;done #red up
+while [[ $green != 0 ]];do
+sleep $SFPS && $FUNC && green=$(expr $green - 1) ;done #green down
+SEQ
+}
+function PF(){
+FUNC="Ftext"
+tempctn=$content
+content=$(echo "$tempctn" | figlet)
+PREP
+}
+function help(){
+echo ' -i		| direct text input'
+echo ' --help		| this message     '
+echo ' null		| $* input from file'
+echo ' --figlet	| auto pass by figlet'
+}
+function Ftrap(){
+SFPS="10000"
+tput cnorm
+kill -s 9 $$
+}
+trap Ftrap SIGINT
+if [[ $1 = "--figlet" ]];then content="$2 $3 $4 $5 $6 $7 $8 $9" && PF ;else
+[[ $1 = "--help" ]] && help || if [[ $1 = "-i" ]];then content="$2 $3 $4 $5 $6 $7 $8 $9" && FUNC="Finput" && SEQ;else content=$(cat $1) && FUNC="Ftext" && PREP || ER="2 File doesn't exist." && STOP && ER="1 PREP() Failed." && STOP ;fi
+fi
